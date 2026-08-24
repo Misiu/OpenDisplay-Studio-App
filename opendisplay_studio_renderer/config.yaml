@@ -8,8 +8,6 @@ arch:
   - amd64
   - aarch64
 init: false
-startup: application
-boot: auto
 discovery:
   - opendisplay_studio_renderer
 stage: experimental

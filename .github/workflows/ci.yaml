@@ -59,7 +59,7 @@ jobs:
           for attempt in $(seq 1 60); do
             if [ "$(docker inspect --format '{{.State.Health.Status}}' odx-renderer-smoke)" = "healthy" ]; then
               docker exec -i odx-renderer-smoke node - <<'NODE'
-          const { readFileSync } = require("node:fs");
+          const { readFileSync } = await import("node:fs");
           const token = JSON.parse(readFileSync("/data/integration_credentials.json", "utf8")).auth_token;
           const response = await fetch("http://127.0.0.1:8099/render", {
             method: "POST",
