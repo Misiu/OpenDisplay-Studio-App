@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+- Bundle pinned TRMNL Framework 3.2.0 CSS, JavaScript, fonts, and notices.
+- Load the framework shell once per persistent page and run warm renders by
+  replacing only `#root.innerHTML`.
+- Add Framework version health data, offline request blocking verification,
+  deterministic screenshot checks, and 1000-render memory benchmarks.
+
 ## 0.1.0
 
 - Add persistent Chromium and persistent rendering page pool.

@@ -1,0 +1,12 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; margin: 0; }
+html, body { overflow: hidden; background: #fff; }
+#root { isolation: isolate; }
+#root > .screen {
+  --screen-w: 100vw;
+  --screen-h: 100vh;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}

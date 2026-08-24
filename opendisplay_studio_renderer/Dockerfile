@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.18
 FROM mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
 
-ARG BUILD_VERSION=0.1.0
+ARG BUILD_VERSION=0.2.0
 ARG BUILD_ARCH
 
 ENV NODE_ENV=production \
@@ -15,6 +15,7 @@ RUN npm ci --omit=dev --ignore-scripts \
     && npm cache clean --force
 
 COPY rootfs/app/src/ ./src/
+COPY rootfs/app/assets/ ./assets/
 RUN mkdir -p /data
 
 EXPOSE 8099

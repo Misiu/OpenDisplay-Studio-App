@@ -25,7 +25,7 @@ function fixture() {
   return buildServer({
     renderer,
     credentials: { authToken: "test-token" },
-    config: { version: "0.1.0", poolSize: 2, maxHtmlBytes: 1024 }
+    config: { version: "0.2.0", poolSize: 2, maxHtmlBytes: 1024 }
   });
 }
 
@@ -35,8 +35,10 @@ test("health exposes compatibility and readiness", async () => {
   assert.equal(response.statusCode, 200);
   assert.deepEqual(response.json(), {
     status: "ok",
-    version: "0.1.0",
+    version: "0.2.0",
+    rendererVersion: "0.2.0",
     apiVersion: 1,
+    trmnlFrameworkVersion: "3.2.0",
     ready: true,
     poolSize: 2
   });

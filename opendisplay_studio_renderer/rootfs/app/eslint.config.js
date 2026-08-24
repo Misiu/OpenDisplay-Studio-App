@@ -3,7 +3,7 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   {
     files: ["**/*.js"],
-    ignores: ["node_modules/**", "coverage/**"],
+    ignores: ["node_modules/**", "coverage/**", "assets/trmnl/**"],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: "module",

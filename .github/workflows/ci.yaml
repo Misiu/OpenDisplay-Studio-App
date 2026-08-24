@@ -61,15 +61,19 @@ jobs:
               docker exec -i odx-renderer-smoke node - <<'NODE'
           const { readFileSync } = await import("node:fs");
           const token = JSON.parse(readFileSync("/data/integration_credentials.json", "utf8")).auth_token;
-          const response = await fetch("http://127.0.0.1:8099/render", {
-            method: "POST",
-            headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-            body: JSON.stringify({ width: 800, height: 480, html: "<main>smoke</main>" })
-          });
-          if (!response.ok || response.headers.get("content-type") !== "image/png") process.exit(1);
-          const png = Buffer.from(await response.arrayBuffer());
-          if (png.readUInt32BE(16) !== 800 || png.readUInt32BE(20) !== 480) process.exit(1);
-          if (!response.headers.get("x-odx-render-time")) process.exit(1);
+          const health = await (await fetch("http://127.0.0.1:8099/health")).json();
+          if (health.apiVersion !== 1 || health.trmnlFrameworkVersion !== "3.2.0") process.exit(1);
+          for (const [width, height, mode] of [[296, 128, "screen--1bit"], [800, 480, "screen--color-3bwr"], [1200, 825, "screen--color-4bwry"]]) {
+            const response = await fetch("http://127.0.0.1:8099/render", {
+              method: "POST",
+              headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+              body: JSON.stringify({ width, height, html: `<main class="screen ${mode}"><div class="view view--full"><div class="layout"><span class="value">smoke</span></div></div></main>` })
+            });
+            if (!response.ok || response.headers.get("content-type") !== "image/png") process.exit(1);
+            const png = Buffer.from(await response.arrayBuffer());
+            if (png.readUInt32BE(16) !== width || png.readUInt32BE(20) !== height) process.exit(1);
+            if (!response.headers.get("x-odx-render-time")) process.exit(1);
+          }
           NODE
               exit 0
             fi

@@ -1,5 +1,7 @@
 import Fastify from "fastify";
 
+import { TRMNL_FRAMEWORK_VERSION } from "./renderer.js";
+
 function rounded(value) {
   return Math.round(value * 10) / 10;
 }
@@ -17,7 +19,9 @@ export function buildServer({ renderer, credentials, config }) {
     return reply.code(ready ? 200 : 503).send({
       status: ready ? "ok" : "starting",
       version: config.version,
+      rendererVersion: config.version,
       apiVersion: 1,
+      trmnlFrameworkVersion: TRMNL_FRAMEWORK_VERSION,
       ready,
       poolSize: config.poolSize
     });

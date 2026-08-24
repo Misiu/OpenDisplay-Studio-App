@@ -12,7 +12,7 @@ token delivered through Supervisor discovery.
 Returns readiness and compatibility data:
 
 ```json
-{"status":"ok","version":"0.1.0","apiVersion":1,"ready":true,"poolSize":2}
+{"status":"ok","version":"0.2.0","rendererVersion":"0.2.0","apiVersion":1,"trmnlFrameworkVersion":"3.2.0","ready":true,"poolSize":2}
 ```
 
 ### `POST /render`
@@ -44,10 +44,14 @@ log fields for every successful render.
 ## Renderer lifecycle
 
 At startup the App launches Chromium once, creates one browser context with
-`deviceScaleFactor: 1`, creates `pool_size` pages, loads the renderer shell and
-local fonts/CSS once, then reports ready. Each warm render acquires one page,
-sets its viewport, replaces only `#root.innerHTML`, waits for fonts and two
-animation frames, screenshots, and returns the page to the pool.
+`deviceScaleFactor: 1`, creates `pool_size` pages, loads TRMNL Framework 3.2.0
+and its local fonts once, then reports ready. Each warm render acquires one
+page, sets its viewport, replaces only `#root.innerHTML`, runs the already
+loaded Framework `terminalize()` pass, waits two animation frames, screenshots,
+and returns the page to the pool.
+
+The App never parses Liquid and never generates HTML. Its complete contract is
+final HTML plus dimensions to PNG.
 
 All HTTP and HTTPS requests initiated by render content are aborted. The
 container includes its fonts and browser, so rendering has no Internet
@@ -65,5 +69,8 @@ Run a repeatable warm benchmark from the source checkout with:
 cd opendisplay_studio_renderer/rootfs/app
 npm ci
 npx playwright install chromium
-npm run benchmark -- --iterations=20 --width=800 --height=480
+npm run benchmark:stage2 -- --iterations=1000 --width=800 --height=480
 ```
+
+The benchmark also records memory checkpoints, page and shell-load counts,
+font readiness, determinism, and blocked external requests.

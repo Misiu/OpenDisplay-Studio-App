@@ -4,20 +4,9 @@ import { chromium } from "playwright";
 
 import { assertPngDimensions } from "./png.js";
 
-const SHELL = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body, #root { width: 100%; height: 100%; margin: 0; }
-    html, body { overflow: hidden; background: #fff; }
-    body { font-family: "DejaVu Sans", Arial, sans-serif; color: #000; }
-    #root { isolation: isolate; }
-  </style>
-</head>
-<body><div id="root"></div></body>
-</html>`;
+const SHELL_URL = new URL("../assets/shell.html", import.meta.url).href;
+const ASSETS_URL_PREFIX = new URL("../assets/", import.meta.url).href;
+export const TRMNL_FRAMEWORK_VERSION = "3.2.0";
 
 export class PersistentRenderer {
   constructor({ poolSize, renderTimeoutMs, executablePath, logger }) {
@@ -30,13 +19,19 @@ export class PersistentRenderer {
     this.available = [];
     this.waiters = [];
     this.ready = false;
+    this.shellLoads = 0;
+    this.blockedExternalRequests = 0;
   }
 
   async start() {
     this.browser = await chromium.launch({
       headless: true,
       executablePath: this.executablePath,
-      args: ["--disable-dev-shm-usage", "--no-sandbox"]
+      args: [
+        "--disable-dev-shm-usage",
+        "--enable-precise-memory-info",
+        "--no-sandbox"
+      ]
     });
     this.context = await this.browser.newContext({
       viewport: { width: 800, height: 480 },
@@ -95,9 +90,11 @@ export class PersistentRenderer {
 
       await page.evaluate(async () => {
         await document.fonts.ready;
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(resolve));
-        });
+        if (typeof window.terminalize !== "function") {
+          throw new Error("TRMNL Framework runtime is unavailable");
+        }
+        await window.terminalize();
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       });
       const layoutEnd = performance.now();
 
@@ -128,6 +125,31 @@ export class PersistentRenderer {
     }
   }
 
+  async diagnostics({ collectGarbage = false } = {}) {
+    const pages = this.context?.pages() ?? [];
+    const pageMetrics = [];
+    for (const page of pages) {
+      if (collectGarbage) {
+        await page.requestGC();
+      }
+      pageMetrics.push(await page.evaluate(() => ({
+        url: location.href,
+        rootChildren: document.querySelector("#root")?.childElementCount ?? -1,
+        frameworkBuild: window.__TRMNL_BUILD__,
+        trmnlFontLoaded: document.fonts.check('16px "TRMNL16"'),
+        jsHeapBytes: performance.memory?.usedJSHeapSize ?? null
+      })));
+    }
+    return {
+      browserConnected: this.browser?.isConnected() ?? false,
+      pageCount: pages.length,
+      shellLoads: this.shellLoads,
+      blockedExternalRequests: this.blockedExternalRequests,
+      nodeRssBytes: process.memoryUsage().rss,
+      pages: pageMetrics
+    };
+  }
+
   async #createPage() {
     if (!this.context) {
       throw new Error("Renderer context is unavailable");
@@ -136,14 +158,28 @@ export class PersistentRenderer {
     page.setDefaultTimeout(this.renderTimeoutMs);
     await page.route("**/*", async (route) => {
       const protocol = new URL(route.request().url()).protocol;
-      if (protocol === "http:" || protocol === "https:") {
+      const requestUrl = route.request().url();
+      const blockedNetwork = protocol === "http:" || protocol === "https:";
+      const blockedFile = protocol === "file:" && !requestUrl.startsWith(ASSETS_URL_PREFIX);
+      if (blockedNetwork || blockedFile) {
+        this.blockedExternalRequests += 1;
         await route.abort("blockedbyclient");
       } else {
         await route.continue();
       }
     });
-    await page.setContent(SHELL, { waitUntil: "load" });
-    await page.evaluate(() => document.fonts.ready);
+    await page.goto(SHELL_URL, { waitUntil: "load" });
+    this.shellLoads += 1;
+    await page.evaluate(async (frameworkVersion) => {
+      await document.fonts.load('16px "TRMNL16"', "OpenDisplay");
+      await document.fonts.ready;
+      if (window.__TRMNL_BUILD__ !== `plugins.js v${frameworkVersion}`) {
+        throw new Error(`Unexpected TRMNL Framework build: ${window.__TRMNL_BUILD__}`);
+      }
+      if (!document.fonts.check('16px "TRMNL16"')) {
+        throw new Error("Bundled TRMNL font did not load");
+      }
+    }, TRMNL_FRAMEWORK_VERSION);
     return page;
   }
 

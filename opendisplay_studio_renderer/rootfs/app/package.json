@@ -1,6 +1,6 @@
 {
   "name": "opendisplay-studio-renderer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Persistent Chromium HTML-to-PNG renderer",
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "benchmark": "node scripts/benchmark.js",
+    "benchmark:stage2": "node scripts/stage2-benchmark.js",
     "check": "tsc --noEmit",
     "lint": "eslint .",
     "start": "node src/index.js",
