@@ -2,11 +2,19 @@
 """Validate repository metadata not covered by the Home Assistant App linter."""
 
 from pathlib import Path
+from struct import unpack
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "opendisplay_studio_renderer"
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    """Read dimensions from a PNG IHDR without an imaging dependency."""
+    data = path.read_bytes()[:24]
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    return unpack(">II", data[16:24])
 
 
 def main() -> None:
@@ -22,6 +30,8 @@ def main() -> None:
     assert config["arch"] == ["amd64", "aarch64"]
     assert config["image"] == "ghcr.io/misiu/opendisplay-studio-renderer"
     assert config["options"]["pool_size"] == 2
+    assert png_size(APP / "icon.png") == (256, 256)
+    assert png_size(APP / "logo.png") == (512, 512)
     print("Repository metadata is valid.")
 
 

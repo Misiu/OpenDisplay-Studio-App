@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+Add the OpenDisplay Studio icon and logo to the App store listing.
+
 ## 0.2.1
 
 Enable GitHub OIDC for unattended Cosign signing in release builds.

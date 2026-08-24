@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Add the Home Assistant App icon and logo.
+
 ## 0.2.1
 
 - Enable GitHub OIDC for unattended Cosign signing in release builds.
