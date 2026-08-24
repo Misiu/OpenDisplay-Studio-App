@@ -3,6 +3,20 @@
 Home Assistant App repository containing the deliberately small renderer used
 by the OpenDisplay Studio proof of concept.
 
+[![Add this App repository to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FMisiu%2FOpenDisplay-Studio-App)
+
+## Installation
+
+Click the button above to open Home Assistant with this App repository URL
+pre-filled. When using the companion
+[OpenDisplay Studio integration](https://github.com/Misiu/OpenDisplay-Studio-Integration),
+you only need to add the repository: the integration offers to install, start,
+discover, and health-check the Renderer automatically.
+
+The manual equivalent is to add
+`https://github.com/Misiu/OpenDisplay-Studio-App` under
+**Settings > Apps > App store > Repositories**.
+
 The renderer owns no Home Assistant concepts. Its stable API is:
 
 - `GET /health` - readiness, renderer version, and API version;
