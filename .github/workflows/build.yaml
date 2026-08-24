@@ -1,0 +1,48 @@
+name: Build images
+
+on:
+  pull_request:
+    paths:
+      - opendisplay_studio_renderer/**
+      - .github/workflows/build.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      version: ${{ steps.info.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - id: info
+        uses: home-assistant/actions/helpers/info@master
+        with:
+          path: ./opendisplay_studio_renderer
+      - id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.06.0
+        with:
+          architectures: ${{ steps.info.outputs.architectures }}
+          image-name: opendisplay-studio-renderer
+          registry-prefix: ghcr.io/misiu
+
+  build:
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: home-assistant/builder/actions/build-image@2026.06.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: ./opendisplay_studio_renderer
+          image: ${{ matrix.image }}
+          image-tags: test
+          push: false
+          version: ${{ needs.prepare.outputs.version }}

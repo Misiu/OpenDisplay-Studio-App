@@ -1,0 +1,24 @@
+name: OpenDisplay Studio Renderer
+version: "0.1.0"
+slug: opendisplay_studio_renderer
+description: Persistent Chromium renderer for OpenDisplay Studio
+url: https://github.com/Misiu/OpenDisplay-Studio-App
+image: ghcr.io/misiu/opendisplay-studio-renderer
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+boot: auto
+discovery:
+  - opendisplay_studio_renderer
+stage: experimental
+options:
+  pool_size: 2
+  max_html_bytes: 1048576
+  render_timeout_ms: 10000
+schema:
+  pool_size: int(1,8)
+  max_html_bytes: int(1024,4194304)
+  render_timeout_ms: int(1000,60000)
+backup: cold

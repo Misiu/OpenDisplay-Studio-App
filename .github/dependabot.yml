@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /opendisplay_studio_renderer/rootfs/app
+    schedule:
+      interval: weekly
+    groups:
+      renderer-runtime:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directory: /opendisplay_studio_renderer
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

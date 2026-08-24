@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: frenck/action-addon-linter@v2.21
+        with:
+          path: ./opendisplay_studio_renderer
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install yamllint==1.37.1 pyyaml==6.0.3
+      - run: yamllint .
+      - run: python scripts/validate_repository.py
+      - run: python scripts/validate_version.py
+
+  renderer:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: opendisplay_studio_renderer/rootfs/app
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: opendisplay_studio_renderer/rootfs/app/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: docker build --tag opendisplay-studio-renderer:smoke opendisplay_studio_renderer
+      - name: Run image
+        run: |
+          mkdir -p .smoke/data
+          printf '%s' '{"pool_size":2,"max_html_bytes":1048576,"render_timeout_ms":10000}' > .smoke/data/options.json
+          docker run --detach --name odx-renderer-smoke \
+            --volume "$PWD/.smoke/data:/data" \
+            opendisplay-studio-renderer:smoke
+      - name: Check health and exact-size render
+        run: |
+          for attempt in $(seq 1 60); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' odx-renderer-smoke)" = "healthy" ]; then
+              docker exec -i odx-renderer-smoke node - <<'NODE'
+          const { readFileSync } = require("node:fs");
+          const token = JSON.parse(readFileSync("/data/integration_credentials.json", "utf8")).auth_token;
+          const response = await fetch("http://127.0.0.1:8099/render", {
+            method: "POST",
+            headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+            body: JSON.stringify({ width: 800, height: 480, html: "<main>smoke</main>" })
+          });
+          if (!response.ok || response.headers.get("content-type") !== "image/png") process.exit(1);
+          const png = Buffer.from(await response.arrayBuffer());
+          if (png.readUInt32BE(16) !== 800 || png.readUInt32BE(20) !== 480) process.exit(1);
+          if (!response.headers.get("x-odx-render-time")) process.exit(1);
+          NODE
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs odx-renderer-smoke
+          exit 1
+      - name: Stop image
+        if: always()
+        run: docker rm --force odx-renderer-smoke || true

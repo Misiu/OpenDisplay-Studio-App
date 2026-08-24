@@ -1,0 +1,10 @@
+configuration:
+  pool_size:
+    name: Rendering page pool size
+    description: Number of simultaneous persistent Chromium pages.
+  max_html_bytes:
+    name: Maximum HTML bytes
+    description: Largest accepted UTF-8 HTML request.
+  render_timeout_ms:
+    name: Render timeout
+    description: Maximum time in milliseconds for a browser operation.

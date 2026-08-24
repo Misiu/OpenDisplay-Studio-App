@@ -1,0 +1,5 @@
+.git
+.github
+.smoke
+**/node_modules
+**/coverage
