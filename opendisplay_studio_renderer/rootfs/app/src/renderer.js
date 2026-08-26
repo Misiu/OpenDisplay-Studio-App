@@ -8,6 +8,18 @@ const SHELL_URL = new URL("../assets/shell.html", import.meta.url).href;
 const ASSETS_URL_PREFIX = new URL("../assets/", import.meta.url).href;
 export const TRMNL_FRAMEWORK_VERSION = "3.2.0";
 
+export function isTrustedFrameworkAsset(requestUrl) {
+  try {
+    const url = new URL(requestUrl);
+    return url.origin === "https://trmnl.com" && (
+      url.pathname === "/images/plugins/weather--render.svg" ||
+      /^\/images\/plugins\/weather\/[a-z0-9-]+\.svg$/u.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export class PersistentRenderer {
   constructor({ poolSize, renderTimeoutMs, executablePath, logger }) {
     this.poolSize = poolSize;
@@ -21,6 +33,7 @@ export class PersistentRenderer {
     this.ready = false;
     this.shellLoads = 0;
     this.blockedExternalRequests = 0;
+    this.trustedFrameworkAssetRequests = 0;
   }
 
   async start() {
@@ -96,6 +109,13 @@ export class PersistentRenderer {
         await window.terminalize();
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       });
+      await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete));
+      const failedImages = await page.evaluate(() => Array.from(document.images)
+        .filter((image) => image.naturalWidth === 0 || image.naturalHeight === 0)
+        .map((image) => image.currentSrc || image.src));
+      if (failedImages.length) {
+        throw new Error(`Image assets failed to load: ${failedImages.join(", ")}`);
+      }
       const layoutEnd = performance.now();
 
       const png = await page.screenshot({
@@ -145,6 +165,7 @@ export class PersistentRenderer {
       pageCount: pages.length,
       shellLoads: this.shellLoads,
       blockedExternalRequests: this.blockedExternalRequests,
+      trustedFrameworkAssetRequests: this.trustedFrameworkAssetRequests,
       nodeRssBytes: process.memoryUsage().rss,
       pages: pageMetrics
     };
@@ -161,7 +182,10 @@ export class PersistentRenderer {
       const requestUrl = route.request().url();
       const blockedNetwork = protocol === "http:" || protocol === "https:";
       const blockedFile = protocol === "file:" && !requestUrl.startsWith(ASSETS_URL_PREFIX);
-      if (blockedNetwork || blockedFile) {
+      if (blockedNetwork && isTrustedFrameworkAsset(requestUrl)) {
+        this.trustedFrameworkAssetRequests += 1;
+        await route.continue();
+      } else if (blockedNetwork || blockedFile) {
         this.blockedExternalRequests += 1;
         await route.abort("blockedbyclient");
       } else {
