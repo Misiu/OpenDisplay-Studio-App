@@ -1,5 +1,5 @@
 name: OpenDisplay Studio Renderer
-version: "0.2.3"
+version: "0.2.4"
 slug: opendisplay_studio_renderer
 description: Persistent Chromium renderer for OpenDisplay Studio
 url: https://github.com/Misiu/OpenDisplay-Studio-App
@@ -9,7 +9,7 @@ arch:
   - aarch64
 init: false
 discovery:
-  - opendisplay_studio_renderer
+  - opendisplay_studio
 stage: experimental
 options:
   pool_size: 2

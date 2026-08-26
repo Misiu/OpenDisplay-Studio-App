@@ -50,7 +50,7 @@ export function loadConfig(environment = process.env) {
     port: integer(environment.ODX_PORT, DEFAULTS.port, 1, 65_535),
     host: environment.ODX_HOST || DEFAULTS.host,
     dataDir,
-    version: environment.ODX_VERSION || "0.2.3",
+    version: environment.ODX_VERSION || "0.2.4",
     executablePath: environment.ODX_CHROMIUM_PATH || undefined,
     authToken: environment.ODX_AUTH_TOKEN || undefined
   });

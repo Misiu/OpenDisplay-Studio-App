@@ -29,6 +29,7 @@ def main() -> None:
     assert config["slug"] == "opendisplay_studio_renderer"
     assert config["arch"] == ["amd64", "aarch64"]
     assert config["image"] == "ghcr.io/misiu/opendisplay-studio-renderer"
+    assert config["discovery"] == ["opendisplay_studio"]
     assert config["options"]["pool_size"] == 2
     assert png_size(APP / "icon.png") == (256, 256)
     assert png_size(APP / "logo.png") == (512, 512)

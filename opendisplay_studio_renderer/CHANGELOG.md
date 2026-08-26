@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Fix the Supervisor discovery service name to match the OpenDisplay Studio
+  integration domain.
+
 ## 0.2.3
 
 Allow only fixed TRMNL weather assets, wait for all images, and reject an
