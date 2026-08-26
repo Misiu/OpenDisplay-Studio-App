@@ -29,6 +29,12 @@ layout, screenshot, and total timings and returns the same data in `X-ODX-*`
 headers. TRMNL Framework 3.2.0 CSS, JavaScript, and fonts are pinned and loaded
 from the local filesystem once per persistent page.
 
+Every image must finish loading before Chromium captures the PNG. Missing
+assets fail the render instead of producing a silently incomplete screen.
+Arbitrary network requests remain blocked; the current compatibility bridge
+only permits the fixed TRMNL weather SVG namespace while ODX packages gain
+bundled asset declarations.
+
 See [the App documentation](opendisplay_studio_renderer/DOCS.md) for setup,
 API, security, and benchmarking details.
 

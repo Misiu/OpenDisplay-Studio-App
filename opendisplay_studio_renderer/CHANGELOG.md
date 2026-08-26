@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+Allow only fixed TRMNL weather assets, wait for all images, and reject an
+incomplete render when any image fails to load.
+
 ## 0.2.2
 
 Add the OpenDisplay Studio icon and logo to the App store listing.

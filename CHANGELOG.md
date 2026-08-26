@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Allow only the fixed TRMNL weather asset namespace during rendering.
+- Wait for every image and reject renders containing missing assets instead of
+  silently producing incomplete PNGs.
+
 ## 0.2.2
 
 - Add the Home Assistant App icon and logo.

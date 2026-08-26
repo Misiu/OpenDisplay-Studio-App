@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { isTrustedFrameworkAsset } from "../src/renderer.js";
+
 const CSS = new URL("../assets/trmnl/3.2.0/plugins.min.css", import.meta.url);
 const JS = new URL("../assets/trmnl/3.2.0/plugins.min.js", import.meta.url);
 
@@ -22,4 +24,21 @@ test("TRMNL Framework artifacts are pinned and offline", async () => {
   );
   assert.doesNotMatch(css.toString(), /url\(["']?https?:/u);
   assert.match(javascript.toString(), /plugins\.js v3\.2\.0/u);
+});
+
+test("only fixed TRMNL weather assets may use the network", () => {
+  assert.equal(
+    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather/wi-rain.svg"),
+    true
+  );
+  assert.equal(
+    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather--render.svg"),
+    true
+  );
+  assert.equal(isTrustedFrameworkAsset("https://trmnl.com/other.svg"), false);
+  assert.equal(isTrustedFrameworkAsset("https://example.com/wi-rain.svg"), false);
+  assert.equal(
+    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather/../../private.svg"),
+    false
+  );
 });
