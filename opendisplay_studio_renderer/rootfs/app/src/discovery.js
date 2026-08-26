@@ -36,7 +36,7 @@ export class SupervisorDiscovery {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          service: "opendisplay_studio_renderer",
+          service: "opendisplay_studio",
           config: {
             host: this.environment.HOSTNAME,
             port: this.port,

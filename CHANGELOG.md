@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.4
+
+- Announce the Renderer with the `opendisplay_studio` integration domain so
+  Home Assistant routes Supervisor discovery to the installed integration.
+
 ## 0.2.3
 
 - Allow only the fixed TRMNL weather asset namespace during rendering.
