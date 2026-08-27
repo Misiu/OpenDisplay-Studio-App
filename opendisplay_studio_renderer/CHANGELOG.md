@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+Align the Renderer release line with OpenDisplay Studio Integration 0.5.0
+while preserving the pinned TRMNL Framework 3.2.0 and exact rendering API.
+
 ## 0.2.4
 
 - Fix the Supervisor discovery service name to match the OpenDisplay Studio

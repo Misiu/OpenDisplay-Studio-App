@@ -12,7 +12,7 @@ token delivered through Supervisor discovery.
 Returns readiness and compatibility data:
 
 ```json
-{"status":"ok","version":"0.2.4","rendererVersion":"0.2.4","apiVersion":1,"trmnlFrameworkVersion":"3.2.0","ready":true,"poolSize":2}
+{"status":"ok","version":"0.5.0","rendererVersion":"0.5.0","apiVersion":1,"trmnlFrameworkVersion":"3.2.0","ready":true,"poolSize":2}
 ```
 
 ### `POST /render`

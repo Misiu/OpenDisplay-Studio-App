@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- Align the Renderer release line with OpenDisplay Studio Integration 0.5.0.
+- Preserve the pinned TRMNL Framework 3.2.0 and exact shared rendering API used
+  by designer previews, Media Source images, and physical displays.
+
 ## 0.2.4
 
 - Announce the Renderer with the `opendisplay_studio` integration domain so
