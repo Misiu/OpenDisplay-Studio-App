@@ -42,7 +42,7 @@ export class SupervisorDiscovery {
             port: this.port,
             auth_token: this.credentials.authToken,
             instance_id: this.credentials.instanceId,
-            api_version: 1
+            api_version: 2
           }
         })
       });

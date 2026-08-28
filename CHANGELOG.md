@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+- Bundle the complete Material Design Icons 7.4.47 webfont for direct use in
+  Liquid-generated HTML through `mdi` classes.
+- Add Renderer API v2 with a request-scoped origin allowlist. Network access is
+  blocked by default, while widgets can explicitly declare required origins.
+- Disable and clear Chromium's network cache per render so permissions cannot
+  leak between pooled page uses.
+
 ## 0.5.0
 
 - Align the Renderer release line with OpenDisplay Studio Integration 0.5.0.

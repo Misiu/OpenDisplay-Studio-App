@@ -12,13 +12,13 @@ token delivered through Supervisor discovery.
 Returns readiness and compatibility data:
 
 ```json
-{"status":"ok","version":"0.5.0","rendererVersion":"0.5.0","apiVersion":1,"trmnlFrameworkVersion":"3.2.0","ready":true,"poolSize":2}
+{"status":"ok","version":"0.6.0","rendererVersion":"0.6.0","apiVersion":2,"trmnlFrameworkVersion":"3.2.0","ready":true,"poolSize":2}
 ```
 
 ### `POST /render`
 
 ```json
-{"width":800,"height":480,"html":"<div>OpenDisplay Studio</div>"}
+{"width":800,"height":480,"html":"<div>OpenDisplay Studio</div>","allowedAssetOrigins":[]}
 ```
 
 The response body is an `image/png`, never Base64 encoded. The PNG IHDR is
@@ -48,14 +48,20 @@ At startup the App launches Chromium once, creates one browser context with
 and its local fonts once, then reports ready. Each warm render acquires one
 page, sets its viewport, replaces only `#root.innerHTML`, runs the already
 loaded Framework `terminalize()` pass, waits two animation frames, screenshots,
-and returns the page to the pool.
+and returns the page to the pool. The complete Material Design Icons 7.4.47
+WOFF2 font is loaded with the shell, so widgets can use `mdi` classes without
+network or per-icon image requests.
 
 The App never parses Liquid and never generates HTML. Its complete contract is
 final HTML plus dimensions to PNG.
 
-All HTTP and HTTPS requests initiated by render content are aborted. The
-container includes its fonts and browser, so rendering has no Internet
-dependency.
+HTTP and HTTPS requests initiated by render content are aborted unless their
+exact origin appears in the authenticated request's `allowedAssetOrigins`.
+The allowlist is limited to 16 origins, scoped to one acquired page, and cleared
+before that page returns to the pool. Chromium's network cache is disabled and
+cleared per render so a previously allowed response cannot leak into a later
+local-only render. The container includes its fonts and browser, so local-only
+rendering has no Internet dependency.
 
 ## POC performance bands
 

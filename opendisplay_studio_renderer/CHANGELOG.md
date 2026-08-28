@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- Bundle Material Design Icons 7.4.47 as a local WOFF2 webfont and expose all
+  icon classes to rendered widgets.
+- Remove the hardcoded TRMNL Weather exception and add a generic,
+  request-scoped origin allowlist to Renderer API v2. Rendering remains
+  local-only when the allowlist is empty.
+
 ## 0.5.0
 
 Align the Renderer release line with OpenDisplay Studio Integration 0.5.0

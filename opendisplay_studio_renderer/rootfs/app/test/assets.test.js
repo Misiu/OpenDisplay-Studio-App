@@ -3,10 +3,12 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { isTrustedFrameworkAsset } from "../src/renderer.js";
+import { isBlockedRenderRequest } from "../src/renderer.js";
 
 const CSS = new URL("../assets/trmnl/3.2.0/plugins.min.css", import.meta.url);
 const JS = new URL("../assets/trmnl/3.2.0/plugins.min.js", import.meta.url);
+const MDI_CSS = new URL("../assets/mdi/css/materialdesignicons.min.css", import.meta.url);
+const MDI_FONT = new URL("../assets/mdi/fonts/materialdesignicons-webfont.woff2", import.meta.url);
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -26,19 +28,40 @@ test("TRMNL Framework artifacts are pinned and offline", async () => {
   assert.match(javascript.toString(), /plugins\.js v3\.2\.0/u);
 });
 
-test("only fixed TRMNL weather assets may use the network", () => {
+test("Material Design Icons are pinned and bundled locally", async () => {
+  const [css, font] = await Promise.all([readFile(MDI_CSS), readFile(MDI_FONT)]);
   assert.equal(
-    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather/wi-rain.svg"),
-    true
+    sha256(css),
+    "03fe3caba05e65b14e4035139eee89b12be87cd0bcf342ac3886770eec3a9962"
   );
   assert.equal(
-    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather--render.svg"),
-    true
+    sha256(font),
+    "662fefa8f2f8a95c18588d21774789c107c64e771cbe65a69af46291c4311afc"
   );
-  assert.equal(isTrustedFrameworkAsset("https://trmnl.com/other.svg"), false);
-  assert.equal(isTrustedFrameworkAsset("https://example.com/wi-rain.svg"), false);
+  assert.match(css.toString(), /\.mdi-weather-rainy::before/u);
+  assert.match(css.toString(), /\.mdi-weather-sunny::before/u);
+  assert.doesNotMatch(css.toString(), /url\(["']?https?:/u);
+});
+
+test("render content can only load explicitly allowed origins", () => {
+  assert.equal(isBlockedRenderRequest("https://trmnl.com/images/weather.svg"), true);
   assert.equal(
-    isTrustedFrameworkAsset("https://trmnl.com/images/plugins/weather/../../private.svg"),
+    isBlockedRenderRequest(
+      "https://cdn.example.com/images/weather.svg",
+      ["https://cdn.example.com"]
+    ),
     false
   );
+  assert.equal(
+    isBlockedRenderRequest("http://cdn.example.com/icon.svg", ["https://cdn.example.com"]),
+    true
+  );
+  assert.equal(
+    isBlockedRenderRequest("https://other.example.com/icon.svg", ["https://cdn.example.com"]),
+    true
+  );
+  assert.equal(isBlockedRenderRequest("data:image/svg+xml;base64,PHN2Zz4="), false);
+  assert.equal(isBlockedRenderRequest(new URL("../assets/shell.html", import.meta.url).href), false);
+  assert.equal(isBlockedRenderRequest("file:///etc/passwd"), true);
+  assert.equal(isBlockedRenderRequest("not a URL"), true);
 });

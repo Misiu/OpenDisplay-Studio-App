@@ -35,11 +35,19 @@ const samples = [];
 await renderer.start();
 try {
   snapshots.push({ renders: 0, ...(await renderer.diagnostics({ collectGarbage: true })) });
-  await renderer.render({
-    html: `${html}<img src="https://example.invalid/must-be-blocked.png" alt="">`,
-    width,
-    height
-  });
+  let blockedNetworkVerified = false;
+  try {
+    await renderer.render({
+      html: `${html}<img src="https://example.invalid/must-be-blocked.png" alt="">`,
+      width,
+      height
+    });
+  } catch (error) {
+    blockedNetworkVerified = /Image assets failed/u.test(error.message);
+  }
+  if (!blockedNetworkVerified) {
+    throw new Error("Undeclared network asset was not blocked");
+  }
   const deterministicA = await renderer.render({ html, width, height });
   const deterministicB = await renderer.render({ html, width, height });
   const deterministic =
@@ -64,7 +72,7 @@ try {
   }
   console.log(
     JSON.stringify(
-      { iterations, width, height, deterministic, timings, snapshots },
+      { iterations, width, height, deterministic, blockedNetworkVerified, timings, snapshots },
       null,
       2
     )

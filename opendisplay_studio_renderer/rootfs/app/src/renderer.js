@@ -8,15 +8,15 @@ const SHELL_URL = new URL("../assets/shell.html", import.meta.url).href;
 const ASSETS_URL_PREFIX = new URL("../assets/", import.meta.url).href;
 export const TRMNL_FRAMEWORK_VERSION = "3.2.0";
 
-export function isTrustedFrameworkAsset(requestUrl) {
+export function isBlockedRenderRequest(requestUrl, allowedOrigins = []) {
   try {
     const url = new URL(requestUrl);
-    return url.origin === "https://trmnl.com" && (
-      url.pathname === "/images/plugins/weather--render.svg" ||
-      /^\/images\/plugins\/weather\/[a-z0-9-]+\.svg$/u.test(url.pathname)
-    );
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return !new Set(allowedOrigins).has(url.origin);
+    }
+    return url.protocol === "file:" && !requestUrl.startsWith(ASSETS_URL_PREFIX);
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -33,7 +33,9 @@ export class PersistentRenderer {
     this.ready = false;
     this.shellLoads = 0;
     this.blockedExternalRequests = 0;
-    this.trustedFrameworkAssetRequests = 0;
+    this.allowedNetworkRequests = 0;
+    this.allowedOriginsByPage = new WeakMap();
+    this.devtoolsByPage = new WeakMap();
   }
 
   async start() {
@@ -84,12 +86,14 @@ export class PersistentRenderer {
     this.available = [];
   }
 
-  async render({ html, width, height }) {
+  async render({ html, width, height, allowedAssetOrigins = [] }) {
     const totalStart = performance.now();
     const page = await this.#acquire();
     const queueEnd = performance.now();
     let healthy = true;
     try {
+      this.allowedOriginsByPage.set(page, new Set(allowedAssetOrigins));
+      await this.devtoolsByPage.get(page)?.send("Network.clearBrowserCache");
       const domStart = performance.now();
       await page.setViewportSize({ width, height });
       await page.evaluate((content) => {
@@ -141,6 +145,7 @@ export class PersistentRenderer {
       healthy = false;
       throw error;
     } finally {
+      this.allowedOriginsByPage.delete(page);
       await this.#release(page, healthy);
     }
   }
@@ -157,6 +162,7 @@ export class PersistentRenderer {
         rootChildren: document.querySelector("#root")?.childElementCount ?? -1,
         frameworkBuild: window.__TRMNL_BUILD__,
         trmnlFontLoaded: document.fonts.check('16px "TRMNL16"'),
+        mdiFontLoaded: document.fonts.check('24px "Material Design Icons"'),
         jsHeapBytes: performance.memory?.usedJSHeapSize ?? null
       })));
     }
@@ -165,7 +171,7 @@ export class PersistentRenderer {
       pageCount: pages.length,
       shellLoads: this.shellLoads,
       blockedExternalRequests: this.blockedExternalRequests,
-      trustedFrameworkAssetRequests: this.trustedFrameworkAssetRequests,
+      allowedNetworkRequests: this.allowedNetworkRequests,
       nodeRssBytes: process.memoryUsage().rss,
       pages: pageMetrics
     };
@@ -176,19 +182,21 @@ export class PersistentRenderer {
       throw new Error("Renderer context is unavailable");
     }
     const page = await this.context.newPage();
+    const devtools = await this.context.newCDPSession(page);
+    await devtools.send("Network.setCacheDisabled", { cacheDisabled: true });
+    this.devtoolsByPage.set(page, devtools);
     page.setDefaultTimeout(this.renderTimeoutMs);
     await page.route("**/*", async (route) => {
-      const protocol = new URL(route.request().url()).protocol;
       const requestUrl = route.request().url();
-      const blockedNetwork = protocol === "http:" || protocol === "https:";
-      const blockedFile = protocol === "file:" && !requestUrl.startsWith(ASSETS_URL_PREFIX);
-      if (blockedNetwork && isTrustedFrameworkAsset(requestUrl)) {
-        this.trustedFrameworkAssetRequests += 1;
-        await route.continue();
-      } else if (blockedNetwork || blockedFile) {
+      const allowedOrigins = this.allowedOriginsByPage.get(page) ?? new Set();
+      if (isBlockedRenderRequest(requestUrl, allowedOrigins)) {
         this.blockedExternalRequests += 1;
         await route.abort("blockedbyclient");
       } else {
+        const protocol = new URL(requestUrl).protocol;
+        if (protocol === "http:" || protocol === "https:") {
+          this.allowedNetworkRequests += 1;
+        }
         await route.continue();
       }
     });
@@ -196,12 +204,16 @@ export class PersistentRenderer {
     this.shellLoads += 1;
     await page.evaluate(async (frameworkVersion) => {
       await document.fonts.load('16px "TRMNL16"', "OpenDisplay");
+      await document.fonts.load('24px "Material Design Icons"');
       await document.fonts.ready;
       if (window.__TRMNL_BUILD__ !== `plugins.js v${frameworkVersion}`) {
         throw new Error(`Unexpected TRMNL Framework build: ${window.__TRMNL_BUILD__}`);
       }
       if (!document.fonts.check('16px "TRMNL16"')) {
         throw new Error("Bundled TRMNL font did not load");
+      }
+      if (!document.fonts.check('24px "Material Design Icons"')) {
+        throw new Error("Bundled Material Design Icons font did not load");
       }
     }, TRMNL_FRAMEWORK_VERSION);
     return page;

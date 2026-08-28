@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const DEFAULTS = Object.freeze({
   poolSize: 2,
-  maxHtmlBytes: 1_048_576,
+  maxHtmlBytes: 8_388_608,
   renderTimeoutMs: 10_000,
   port: 8099,
   host: "0.0.0.0",
@@ -39,7 +39,7 @@ export function loadConfig(environment = process.env) {
       environment.ODX_MAX_HTML_BYTES ?? options.max_html_bytes,
       DEFAULTS.maxHtmlBytes,
       1024,
-      4_194_304
+      16_777_216
     ),
     renderTimeoutMs: integer(
       environment.ODX_RENDER_TIMEOUT_MS ?? options.render_timeout_ms,
@@ -50,7 +50,7 @@ export function loadConfig(environment = process.env) {
     port: integer(environment.ODX_PORT, DEFAULTS.port, 1, 65_535),
     host: environment.ODX_HOST || DEFAULTS.host,
     dataDir,
-    version: environment.ODX_VERSION || "0.5.0",
+    version: environment.ODX_VERSION || "0.6.0",
     executablePath: environment.ODX_CHROMIUM_PATH || undefined,
     authToken: environment.ODX_AUTH_TOKEN || undefined
   });

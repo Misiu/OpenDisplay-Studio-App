@@ -36,7 +36,7 @@ test("announces the OpenDisplay Studio integration discovery service", async (co
       port: 8099,
       auth_token: "secret",
       instance_id: "instance",
-      api_version: 1
+      api_version: 2
     }
   });
 });
