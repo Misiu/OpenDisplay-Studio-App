@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.18
-FROM mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+FROM mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
 
 ARG BUILD_VERSION=0.6.0
 ARG BUILD_ARCH
